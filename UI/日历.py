@@ -3,15 +3,16 @@ from tkinter import ttk
 from datetime import datetime
 import calendar
 import os
+from tkinter import messagebox
 
 # 创建主窗口
 root = tk.Tk()
 root.title("日历程序")
-root.geometry("400x580")
+root.geometry("400x700")
 root.configure(bg='#FFFACD')  # 设置背景为淡黄色
 root.resizable(False, False)  # 固定窗口大小
 
-# 获取当前日期 
+# 获取当前日期
 now = datetime.now()
 year = now.year
 month = now.month
@@ -50,7 +51,7 @@ def update_calendar(year, month):
             else:
                 lbl = tk.Button(cal_frame, text=day, padx=5, pady=5, width=4, font=("Arial", 10),
                                 command=lambda d=day: select_day(d),
-                                relief='groove', bg='#FFEB99', activebackground='#FFD700')  # 使用 'flat' 移除按钮阴影
+                                relief='groove', bg='#FFEB99', activebackground='#FFD700')
             lbl.grid(row=r + 1, column=c)
 
 # 切换到前一个月
@@ -71,6 +72,18 @@ def next_month():
         year += 1
     else:
         month += 1
+    update_calendar(year, month)
+
+# 切换到前一年
+def prev_year():
+    global year
+    year -= 1
+    update_calendar(year, month)
+
+# 切换到下一年
+def next_year():
+    global year
+    year += 1
     update_calendar(year, month)
 
 # 更新选中日期并显示日程
@@ -98,6 +111,16 @@ def save_schedule():
         content = schedule_text.get(1.0, tk.END).strip()
         file.write(content)
 
+# 粘贴复制内容到日程
+# 粘贴的逻辑是LLM分析剪贴板内容是否为行程内容，是的话调用这个函数
+def paste_content_to_calendar():
+    response = messagebox.askyesno("提示", "是否要读取复制内容至日历")
+    try:
+        clipboard_content = root.clipboard_get()
+        schedule_text.insert(tk.END, clipboard_content)
+    except tk.TclError:
+        messagebox.showerror("错误", "剪贴板中没有内容")
+
 # 日历框架
 cal_frame = tk.Frame(root, bg='#FFFACD')  # 日历框架背景设置为淡黄色
 cal_frame.pack()
@@ -106,7 +129,18 @@ cal_frame.pack()
 btn_frame = tk.Frame(root, bg='#FFFACD')  # 按钮框架背景设置为淡黄色
 btn_frame.pack(pady=10)
 
-# 前一个月和下一个月按钮（去除阴影效果，背景色保持一致）
+# 创建年份和月份切换的按钮框架
+year_btn_frame = tk.Frame(root, bg='#FFFACD')
+year_btn_frame.pack(pady=5)
+
+# 前一年和下一年按钮
+prev_year_btn = tk.Button(year_btn_frame, text="上一年", command=prev_year, relief='groove', bg='#FFEB99', activebackground='#FFD700', font=("Arial", 10))
+prev_year_btn.pack(side='left', padx=10)
+
+next_year_btn = tk.Button(year_btn_frame, text="下一年", command=next_year, relief='groove', bg='#FFEB99', activebackground='#FFD700', font=("Arial", 10))
+next_year_btn.pack(side='left', padx=10)
+
+# 前一个月和下一个月按钮
 prev_btn = tk.Button(btn_frame, text="前一个月", command=prev_month, relief='groove', bg='#FFEB99', activebackground='#FFD700', font=("Arial", 10))
 prev_btn.pack(side='left', padx=10)
 
@@ -125,6 +159,10 @@ show_schedule(selected_day)  # 默认显示今天的日程
 # 保存按钮（去除阴影效果）
 save_btn = tk.Button(root, text="保存日程", command=save_schedule, relief='groove', bg='#FFEB99', activebackground='#FFD700', font=("Arial", 10))
 save_btn.pack(pady=5)
+
+# 粘贴复制内容按钮
+paste_btn = tk.Button(root, text="粘贴复制内容", command=paste_content_to_calendar, relief='groove', bg='#FFEB99', activebackground='#FFD700', font=("Arial", 10))
+paste_btn.pack(pady=5)
 
 # 初始化日历
 update_calendar(year, month)

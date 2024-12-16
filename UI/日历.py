@@ -17,8 +17,14 @@ root.resizable(False, False)  # 固定窗口大小
 
 # 获取当前日期
 now = datetime.now()
+now_str = now.strftime("%Y-%m-%d %H:%M")
 year = now.year
 month = now.month
+# 获取当前日期
+weekday =  now.weekday()
+# 将数字转换为周几的名称
+days = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+weekday_name = days[weekday]
 selected_day = now.day  # 默认选中今天
 
 # 自定义字体
@@ -65,8 +71,14 @@ def http_post_generate(post_data, context):
 def LLM_func(propt_str):
     # 输入提示词和问题
     hint_for_judge_str="\n上述的信息能够转化为日程信息吗，如果能回复\"Yes\",否则回复\"No\"。"
-    hint_str = "分析发给你的信息，回复的具体格式:\"具体时间：具体时间如几点几分、早上还是晚上\n地点:地点信息\n内容:内容信息\nEND\"。如果是线上的将地点替换为会议号或其它相关链接且链接的含义或者内容要写明。\n"
-    hint_of_data="分析发给你的信息，识别其中的年月日若无年或月可省略，回复格式为：\"xx年xx月xx日，比如2021年3月4日\";若无年月日则识别例如\"今天\"\"明天\"\"后天\"的字并直接回复"
+    hint_str = f"今天是{now_str}\n，{weekday_name}. \
+                 分析发给你的信息，回复的具体格式:\"具体时间：具体时间如某年某月某日，几点几分，早上还是晚上\n地点:地点信息\n内容:内容信息\nEND\"。\n \
+                 如果信息中仅指明了星期几，则默认是在本周，那你需要根据当天的星期数来计算日期。 \n \
+                 如果是线上的将地点替换为会议号或其它相关链接且链接的含义或者内容要写明。\n"
+    # hint_of_data=f"现在的时间是{now_str}\n。分析发给你的日程信息，识别其中的年月日若无年或月可省略，回复格式为：\"xx年xx月xx日，比如2021年3月4日\";若无年月日则识别例如\"今天\"\"明天\"\"后天\"的字并直接回复"
+    hint_of_data = f"今天是{now_str}\n，{weekday_name}。\
+                     分析发给你的日程信息，结合现在的时间，给出日程的年月日，\
+                     格式严格为\"xx年xx月xx日\"，比如2021年3月4日\" "
     # 定义上下文
     context = []
 
@@ -102,7 +114,9 @@ def LLM_func(propt_str):
 
         # 调用API
         response=http_post_generate(post_data, context)
-
+        
+        print(f"response: {response}")
+        print()
 
         # 获取日期信息，为了保存日程
         post_body = {
@@ -117,6 +131,9 @@ def LLM_func(propt_str):
 
         # 调用API
         date=http_post_generate(post_data, context)
+
+        print(f"date: {date}")
+        print()
         return 1,response,date
     else:
         print("不是日志信息")
@@ -199,9 +216,13 @@ def show_schedule(day):
 # 保存当前日期的日程
 def save_schedule():
     filename = f"{schedule_dir}/{year}_{month}_{selected_day}.txt"
-    with open(filename, 'w', encoding='utf-8') as file:
-        content = schedule_text.get(1.0, tk.END).strip()
-        file.write(content)
+    try:
+        with open(filename, 'w', encoding='utf-8') as file:
+            content = schedule_text.get(1.0, tk.END).strip()
+            file.write(content)
+        messagebox.showinfo("保存成功", "日程已保存！")
+    except Exception as e:
+        messagebox.showerror("保存失败", f"保存日程时出错 ：{str(e)}")
 
 # 保存LLM分析的日程信息
 def save_LLM_schedule(y,m,d,message):
@@ -210,6 +231,7 @@ def save_LLM_schedule(y,m,d,message):
     if os.path.exists(filename): #如果文件存在，直接追加
         with open(filename, 'a', encoding='utf-8') as file:
             file.write(message)
+
     else:   #如果文件不存在，则先创建并输入类似”2024年9月25日的日程：“
         with open(filename, 'w', encoding='utf-8') as file:
             message=f"{y}年{m}月{d}日的日程:\n"+message

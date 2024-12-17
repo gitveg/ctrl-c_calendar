@@ -74,7 +74,9 @@ def LLM_func(propt_str):
     hint_str = f"今天是{now_str}\n，{weekday_name}. \
                  分析发给你的信息，回复的具体格式:\"具体时间：具体时间如某年某月某日，几点几分，早上还是晚上\n地点:地点信息\n内容:内容信息\nEND\"。\n \
                  如果信息中仅指明了星期几，则默认是在本周，那你需要根据当天的星期数来计算日期。 \n \
-                 如果是线上的将地点替换为会议号或其它相关链接且链接的含义或者内容要写明。\n"
+                 如果是线上的将地点替换为会议号或其它相关链接且链接的含义或者内容要写明。\n \
+                 如果是一个时间段则具体时间部分显示一段时间,且格式按照xx年xx月xx日-xx年xx月xx日，例如2024年12月23日-2025年1月1日。 \
+                 如果有具体的时分，按照如\"11:00\"的格式回复。"
     # hint_of_data=f"现在的时间是{now_str}\n。分析发给你的日程信息，识别其中的年月日若无年或月可省略，回复格式为：\"xx年xx月xx日，比如2021年3月4日\";若无年月日则识别例如\"今天\"\"明天\"\"后天\"的字并直接回复"
     hint_of_data = f"今天是{now_str}\n，{weekday_name}。\
                      分析发给你的日程信息，结合现在的时间，给出日程的年月日，\
@@ -100,6 +102,7 @@ def LLM_func(propt_str):
 
 
     if judge[:3]=="Yes":
+    # if 1:
         # 准备POST请求体的内容
         # hint_str+=propt_str
         post_body = {
@@ -303,10 +306,48 @@ def paste_content_to_calendar():
             if flag==1:
                 response=messagebox.askyesno("AI分析的日程信息是否合理",LLM_response[:-3])
                 if response==1: #如果用户认为合理则记录一个日程文件中
-                    y,m,d=parse_date(date)
-                    if y!=None and m!=None and d!=None:
-                        print(f"{y}.{m}.{d}")
-                        save_LLM_schedule(y,m,d,LLM_response[:-3])
+                    pattern = r"(\b\d{1,2}:\d{2}\b)"  # 提取时间
+                    match = re.search(pattern, LLM_response)
+                    time=""
+                    if match:
+                        time=match.group(0)
+
+                    pattern = r"地点[:：]?\s*(.*?)\s*内容[:：]?\s*(.*)" # 提取地点和内容
+                    match = re.search(pattern, LLM_response)
+                    print(match)
+                    location=""
+                    content=""
+                    if match:
+                        # 提取地点和内容
+                        location = match.group(1).strip()  # 去除前后空格
+                        content = match.group(2).strip()  # 去除前后空格
+
+                    # 正则表达式匹配“xx年xx月xx日-xx年xx月xx日”
+                    pattern = r"(\d{4})年(\d{1,2})月(\d{1,2})日-(\d{4})年(\d{1,2})月(\d{1,2})日"
+                    # 使用re.search()进行匹配
+                    match = re.search(pattern, LLM_response)
+                    print(match)
+                    if match:
+                        # 提取开始和结束日期
+                        start_year = int(match.group(1))  # 将开始年份转为整数
+                        start_month = int(match.group(2))  # 将开始月份转为整数
+                        start_day = int(match.group(3))  # 将开始日期转为整数
+
+                        end_year = int(match.group(4))  # 将结束年份转为整数
+                        end_month = int(match.group(5))  # 将结束月份转为整数
+                        end_day = int(match.group(6))  # 将结束日期转为整数
+
+                        # 循环将日程记录到时间段中
+                        for y in range(start_year,end_year+1):
+                            for m in range(start_month,end_month+1):
+                                for d in range(start_day,end_day+1):
+                                    save_content=f"具体时间：{time}\n地点：{location}\n内容：{content}"
+                                    save_LLM_schedule(y,m,d,save_content)
+                    else:
+                        y,m,d=parse_date(date)
+                        if y!=None and m!=None and d!=None:
+                            print(f"{y}.{m}.{d}")
+                            save_LLM_schedule(y,m,d,LLM_response[:-3])
                 # else: #用户可以对内容进行一定的修改再保存
 
                 # schedule_text.insert(tk.END, LLM_response[:-3])

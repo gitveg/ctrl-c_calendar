@@ -18,6 +18,7 @@ pip install -r requirements.txt
 
 启动程序
 ```bash
+cd UI
 python main.py
 ```
 

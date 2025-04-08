@@ -7,6 +7,7 @@ from tkinter import messagebox
 import json
 import requests
 import re
+import audit_log
 
 # 创建主窗口
 root = tk.Tk()
@@ -51,7 +52,7 @@ def http_post_generate(post_data, context):
     }
 
     # 发起POST请求
-    response = requests.post(API_URL, headers=headers, data=post_data)
+    response = requests.post(API_URL, headers=headers, data=post_data,timeout=10)
     
     # 如果请求成功，处理返回的数据
     if response.status_code == 200:

@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 启动程序
 ```bash
-python calendar.py
+python main.py
 ```
 
 ## 使用方法

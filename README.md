@@ -25,6 +25,4 @@ python calendar.py
 
 复制一段带有日程信息的文字，然后点击"粘贴复制内容给AI分析"，AI会自动分析判断是否生成日程表。
 
-![usage](./assets/usage.png)
-
-<!-- ![替代文本](<img src="图片链接" alt="替代文本" style="width: 100px; height: 100px; display: block; margin-left: auto; margin-right: auto;" />) -->
+![usage](https://github.com/gitveg/ctrl-c_calendar/blob/main/assets/usage.png)
